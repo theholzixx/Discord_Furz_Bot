@@ -12,6 +12,7 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -19,6 +20,7 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.audio.AudioSendHandler;
 
 public class DiscordBot {
     private final JDA jda;
@@ -38,7 +40,7 @@ public class DiscordBot {
         File soundFile = soundFiles[random.nextInt(soundFiles.length)];
         AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
         AudioPlayer player = playerManager.createPlayer();
-        guild.getAudioManager().setSendingHandler(new AudioPlayerSendHandler(player));
+        guild.getAudioManager().setSendingHandler(new AudioSendHandler(player));
         try {
             playerManager.loadItem(soundFile.toURI().toURL().toString(), new AudioLoadResultHandler() {
                 @Override
@@ -62,7 +64,10 @@ public class DiscordBot {
                     // loading failed
                 }
             });
-        }    
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+    }
 
     public void scheduleRandomSound(Guild guild) {
         int delay = random.nextInt(5 * 60) + 1 * 60; // delay between 1 and 5 minutes
