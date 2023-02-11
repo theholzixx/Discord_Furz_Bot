@@ -1,8 +1,10 @@
 package com.discord_furz_bot;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
@@ -17,22 +19,27 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.VoiceChannel;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
+import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
 
 public class DiscordBot {
-    private final JDA jda;
+    //private final JDA jda;
     private final Random random;
     private final File soundFolder;
 
     public DiscordBot(String discordToken, File soundFolder) throws Exception {
-        this.jda = new JDABuilder(discordToken).build();
+        //this.jda = new JDABuilder(discordToken).build();
+        JDABuilder.createDefault(discordToken) // Use token provided as JVM argument
+            .enableIntents(GatewayIntent.MESSAGE_CONTENT)
+            .addEventListeners(new MusicBot()) // Register new MusicBot instance as EventListener
+            .build(); // Build JDA - connect to discord
         this.random = new Random();
         this.soundFolder = soundFolder;
-        this.jda.addEventListener(new BotEventListener(this));
-    }//test ob git verbunden ist.
+        //this.jda.addEventListener(new BotEventListener(this));
+    }
 
     public void playRandomSound(Guild guild) {
         VoiceChannel voiceChannel = guild.getVoiceChannels().get(0); // assuming you want to play the sound in the first voice channel
@@ -40,7 +47,7 @@ public class DiscordBot {
         File soundFile = soundFiles[random.nextInt(soundFiles.length)];
         AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
         AudioPlayer player = playerManager.createPlayer();
-        guild.getAudioManager().setSendingHandler(new AudioSendHandler(player));
+        guild.getAudioManager().setSendingHandler(new AudioPlayerSendHandler(player));
         try {
             playerManager.loadItem(soundFile.toURI().toURL().toString(), new AudioLoadResultHandler() {
                 @Override
@@ -71,12 +78,28 @@ public class DiscordBot {
 
     public void scheduleRandomSound(Guild guild) {
         int delay = random.nextInt(5 * 60) + 1 * 60; // delay between 1 and 5 minutes
-        guild.getJDA().getScheduler().schedule(() -> playRandomSound(guild), delay, TimeUnit.SECONDS);
+        //guild.getJDA().getScheduler().schedule(() -> playRandomSound(guild), delay, TimeUnit.SECONDS);
+        System.out.println("Test");
+        playRandomSound(guild);
     }
 
     public static void main(String[] args) throws Exception {
-        File soundFolder = new File("path/to/sound/folder");
-        DiscordBot bot = new DiscordBot("discord-bot-token", soundFolder);
+        String data = "Error";
+        try {
+            File myObj = new File("./discord_furz_bot/src/token.txt");
+            Scanner myReader = new Scanner(myObj);
+            while (myReader.hasNextLine()) {
+                data = myReader.nextLine();
+            }
+            myReader.close();
+        } catch (FileNotFoundException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
+
+        File soundFolder = new File("./discord_furz_bot/src/FurzSounds");
+        DiscordBot bot = new DiscordBot(data, soundFolder);
+        
     }
 
     private class BotEventListener extends ListenerAdapter {
@@ -86,8 +109,8 @@ public class DiscordBot {
             this.bot = bot;
         }
 
-        @Override
-        public void onGuildVoiceJoin(GuildVoiceJoinEvent event) {
+        
+        public void onGuildVoiceJoin(GuildJoinEvent event) {
             bot.scheduleRandomSound(event.getGuild());
         }
     }
