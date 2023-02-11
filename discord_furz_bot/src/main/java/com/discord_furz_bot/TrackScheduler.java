@@ -5,10 +5,6 @@ import com.sedmelluq.discord.lavaplayer.player.event.AudioEventAdapter;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackEndReason;
 
-import net.dv8tion.jda.api.entities.Guild;
-
-import com.discord_furz_bot.DiscordBot;
-
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -19,12 +15,15 @@ public class TrackScheduler extends AudioEventAdapter {
   private final AudioPlayer player;
   private final BlockingQueue<AudioTrack> queue;
 
+  private final DiscordBot bot;
+
   /**
    * @param player The audio player this scheduler uses
    */
-  public TrackScheduler(AudioPlayer player) {
+  public TrackScheduler(AudioPlayer player, DiscordBot bot) {
     this.player = player;
     this.queue = new LinkedBlockingQueue<>();
+    this.bot = bot;
   }
 
   /**
@@ -53,5 +52,6 @@ public class TrackScheduler extends AudioEventAdapter {
   @Override
   public void onTrackEnd(AudioPlayer player, AudioTrack track, AudioTrackEndReason endReason) {
     System.out.println("Test");
+    bot.scheduleRandomSound();
   }
 }
