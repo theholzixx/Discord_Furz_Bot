@@ -87,7 +87,8 @@ public class DiscordBot extends ListenerAdapter{
     }
 
     public void scheduleRandomSound() {
-        int delay = random.nextInt(20) * 1000;//(5 * 60) + 1 * 60; // delay between 1 and 5 minutes
+        int delay = random.nextInt(5 * 60) + 1 * 60;
+        delay = delay * 1000; // delay between 1 and 5 minutes
         System.out.println("delay: " + delay);
         FurzTask furzTask = new FurzTask(this);
         Timer furzTimer = new Timer();
