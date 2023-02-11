@@ -14,6 +14,7 @@ import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
 import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 
 import net.dv8tion.jda.api.JDA;
@@ -21,39 +22,35 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.managers.AudioManager;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.audio.AudioSendHandler;
+import net.dv8tion.jda.api.entities.Member;
 
-public class DiscordBot {
+public class DiscordBot extends ListenerAdapter{
     //private final JDA jda;
-    private final Random random;
-    private final File soundFolder;
-
-    public DiscordBot(String discordToken, File soundFolder) throws Exception {
-        //this.jda = new JDABuilder(discordToken).build();
-        JDABuilder.createDefault(discordToken) // Use token provided as JVM argument
-            .enableIntents(GatewayIntent.MESSAGE_CONTENT)
-            .addEventListeners(new MusicBot()) // Register new MusicBot instance as EventListener
-            .build(); // Build JDA - connect to discord
-        this.random = new Random();
-        this.soundFolder = soundFolder;
-        //this.jda.addEventListener(new BotEventListener(this));
-    }
+    private static Random random;
+    private static File soundFolder;
+    static AudioPlayerManager playerManager;
+    static AudioPlayer player;
 
     public void playRandomSound(Guild guild) {
-        VoiceChannel voiceChannel = guild.getVoiceChannels().get(0); // assuming you want to play the sound in the first voice channel
+
         File[] soundFiles = soundFolder.listFiles();
         File soundFile = soundFiles[random.nextInt(soundFiles.length)];
-        AudioPlayerManager playerManager = new DefaultAudioPlayerManager();
-        AudioPlayer player = playerManager.createPlayer();
-        guild.getAudioManager().setSendingHandler(new AudioPlayerSendHandler(player));
+
         try {
-            playerManager.loadItem(soundFile.toURI().toURL().toString(), new AudioLoadResultHandler() {
+            String Test = soundFile.toURI().toURL().toString();
+            System.out.println(Test);
+            playerManager.loadItem(Test, new AudioLoadResultHandler() {
                 @Override
                 public void trackLoaded(AudioTrack track) {
                     player.startTrack(track, false);
+                    System.out.println("Test");
                 }
+
                 @Override
                 public void playlistLoaded(AudioPlaylist playlist) {
                     AudioTrack track = playlist.getSelectedTrack();
@@ -62,13 +59,17 @@ public class DiscordBot {
                     }
                     player.startTrack(track, false);
                 }
+
                 @Override
                 public void noMatches() {
                     // no matches
+                    System.out.println("no matches");
                 }
+
                 @Override
                 public void loadFailed(FriendlyException e) {
                     // loading failed
+                    System.out.println("loading failed");
                 }
             });
         } catch (MalformedURLException e) {
@@ -79,7 +80,7 @@ public class DiscordBot {
     public void scheduleRandomSound(Guild guild) {
         int delay = random.nextInt(5 * 60) + 1 * 60; // delay between 1 and 5 minutes
         //guild.getJDA().getScheduler().schedule(() -> playRandomSound(guild), delay, TimeUnit.SECONDS);
-        System.out.println("Test");
+        System.out.println("delay: " + delay);
         playRandomSound(guild);
     }
 
@@ -97,21 +98,45 @@ public class DiscordBot {
             e.printStackTrace();
         }
 
-        File soundFolder = new File("./discord_furz_bot/src/FurzSounds");
-        DiscordBot bot = new DiscordBot(data, soundFolder);
-        
+        soundFolder = new File("discord_furz_bot/src/FurzSounds");
+
+        JDABuilder.createDefault(data) // Use token read from File
+            .enableIntents(GatewayIntent.MESSAGE_CONTENT)
+            .addEventListeners(new DiscordBot()) // Register new DiscordBot instance as EventListener
+            .build(); // Build JDA - connect to discord
+
+        playerManager = new DefaultAudioPlayerManager();
+        player = playerManager.createPlayer();
+        AudioSourceManagers.registerLocalSource(playerManager);
+
+        random = new Random();
     }
 
-    private class BotEventListener extends ListenerAdapter {
-        private final DiscordBot bot;
-
-        public BotEventListener(DiscordBot bot) {
-            this.bot = bot;
-        }
-
+    @Override
+    public void onMessageReceived(MessageReceivedEvent event) 
+    {
+        // Make sure we only respond to events that occur in a guild
+        if (!event.isFromGuild()) return;
+        // This makes sure we only execute our code when someone sends a message with "!play"
+        if (!event.getMessage().getContentRaw().startsWith("!play")) return;
+        // Now we want to exclude messages from bots since we want to avoid command loops in chat!
+        // this will include own messages as well for bot accounts
+        // if this is not a bot make sure to check if this message is sent by yourself!
+        if (event.getAuthor().isBot()) return;
+        Guild guild = event.getGuild();
+        Member member = event.getMember();
+        if (!member.getVoiceState().inAudioChannel()) return;
+        // This will get the first voice channel with the name "music"
+        // matching by voiceChannel.getName().equalsIgnoreCase("music")
+        //VoiceChannel channel = member.getVoiceState().getChannel(); //ByName("Talk 2", true).get(0);
+        //System.out.println(channel);
+        AudioManager manager = guild.getAudioManager();
+        // MySendHandler should be your AudioSendHandler implementation
+        manager.setSendingHandler(new AudioPlayerSendHandler(player));
+        // Here we finally connect to the target voice channel 
+        // and it will automatically start pulling the audio from the MySendHandler instance
+        manager.openAudioConnection(member.getVoiceState().getChannel());
         
-        public void onGuildVoiceJoin(GuildJoinEvent event) {
-            bot.scheduleRandomSound(event.getGuild());
-        }
+        scheduleRandomSound(guild);
     }
 }
