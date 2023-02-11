@@ -35,46 +35,45 @@ public class DiscordBot extends ListenerAdapter{
     private static File soundFolder;
     static AudioPlayerManager playerManager;
     static AudioPlayer player;
+    static TrackScheduler schedular;
 
     public void playRandomSound(Guild guild) {
 
         File[] soundFiles = soundFolder.listFiles();
         File soundFile = soundFiles[random.nextInt(soundFiles.length)];
 
-        try {
-            String Test = soundFile.toURI().toURL().toString();
-            System.out.println(Test);
-            playerManager.loadItem(Test, new AudioLoadResultHandler() {
-                @Override
-                public void trackLoaded(AudioTrack track) {
-                    player.startTrack(track, false);
-                    System.out.println("Test");
-                }
+        String Test = soundFile.getAbsolutePath();
+        System.out.println(Test);
+        playerManager.loadItem(Test, new AudioLoadResultHandler() {
+            @Override
+            public void trackLoaded(AudioTrack track) {
+                player.startTrack(track, false);
+            }
 
-                @Override
-                public void playlistLoaded(AudioPlaylist playlist) {
-                    AudioTrack track = playlist.getSelectedTrack();
-                    if (track == null) {
-                        track = playlist.getTracks().get(0);
-                    }
-                    player.startTrack(track, false);
+            @Override
+            public void playlistLoaded(AudioPlaylist playlist) {
+                AudioTrack track = playlist.getSelectedTrack();
+                if (track == null) {
+                    track = playlist.getTracks().get(0);
                 }
+                player.startTrack(track, false);
+            }
 
-                @Override
-                public void noMatches() {
-                    // no matches
-                    System.out.println("no matches");
-                }
+            @Override
+            public void noMatches() {
+                // no matches
+                System.out.println("no matches");
+            }
 
-                @Override
-                public void loadFailed(FriendlyException e) {
-                    // loading failed
-                    System.out.println("loading failed");
-                }
-            });
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+            @Override
+            public void loadFailed(FriendlyException e) {
+                // loading failed
+                System.out.println("loading failed");
+            }
+        });
+
+        //scheduleRandomSound(guild);
+
     }
 
     public void scheduleRandomSound(Guild guild) {
@@ -108,6 +107,9 @@ public class DiscordBot extends ListenerAdapter{
         playerManager = new DefaultAudioPlayerManager();
         player = playerManager.createPlayer();
         AudioSourceManagers.registerLocalSource(playerManager);
+
+        schedular = new TrackScheduler(player);
+        player.addListener(schedular);
 
         random = new Random();
     }
