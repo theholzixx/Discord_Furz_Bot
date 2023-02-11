@@ -32,7 +32,7 @@ public class DiscordBot {
         this.random = new Random();
         this.soundFolder = soundFolder;
         this.jda.addEventListener(new BotEventListener(this));
-    }
+    }//test ob git verbunden ist.
 
     public void playRandomSound(Guild guild) {
         VoiceChannel voiceChannel = guild.getVoiceChannels().get(0); // assuming you want to play the sound in the first voice channel
