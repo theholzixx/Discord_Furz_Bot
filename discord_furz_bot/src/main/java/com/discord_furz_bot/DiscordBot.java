@@ -59,7 +59,6 @@ public class DiscordBot extends ListenerAdapter{
 
                 @Override
                 public void noMatches() {
-                    // no matches
                     System.out.println("no matches");
                 }
 
@@ -142,7 +141,20 @@ public class DiscordBot extends ListenerAdapter{
             AudioManager manager = guild.getAudioManager();
             manager.setSendingHandler(new AudioPlayerSendHandler(player));
             manager.openAudioConnection(member.getVoiceState().getChannel());
-            scheduleRandomSound();
+
+            for (Timer timer : tasks) {
+                timer.cancel();
+            }
+
+            if (event.getMessage().getContentRaw().contains("now")) {
+                playRandomSound();
+                System.out.println("Furz now");
+            } else {
+                scheduleRandomSound();
+                System.out.println("Furz Random");
+            }
+
+            
         }
         
         else if(event.getMessage().getContentRaw().startsWith("!stopfurz")) {
