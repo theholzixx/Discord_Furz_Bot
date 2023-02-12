@@ -132,36 +132,29 @@ public class DiscordBot extends ListenerAdapter{
     @Override
     public void onMessageReceived(MessageReceivedEvent event) 
     {
-        // Make sure we only respond to events that occur in a guild
         if (!event.isFromGuild()) return;
-        // This makes sure we only execute our code when someone sends a message with "!play"
 
-        if (event.getMessage().getContentRaw().startsWith("!play")) {
-            // Now we want to exclude messages from bots since we want to avoid command loops in chat!
-            // this will include own messages as well for bot accounts
-            // if this is not a bot make sure to check if this message is sent by yourself!
+        if (event.getMessage().getContentRaw().startsWith("!furz")) {
             if (event.getAuthor().isBot()) return;
             Guild guild = event.getGuild();
             Member member = event.getMember();
             if (!member.getVoiceState().inAudioChannel()) return;
-            // This will get the first voice channel with the name "music"
-            // matching by voiceChannel.getName().equalsIgnoreCase("music")
-            //VoiceChannel channel = member.getVoiceState().getChannel(); //ByName("Talk 2", true).get(0);
-            //System.out.println(channel);
             AudioManager manager = guild.getAudioManager();
-            // MySendHandler should be your AudioSendHandler implementation
             manager.setSendingHandler(new AudioPlayerSendHandler(player));
-            // Here we finally connect to the target voice channel 
-            // and it will automatically start pulling the audio from the MySendHandler instance
             manager.openAudioConnection(member.getVoiceState().getChannel());
             scheduleRandomSound();
-        } else if(event.getMessage().getContentRaw().startsWith("!stop")) {
+        }
+        
+        else if(event.getMessage().getContentRaw().startsWith("!stopfurz")) {
             Guild guild = event.getGuild();
             AudioManager manager = guild.getAudioManager();
             for (Timer timer : tasks) {
                 timer.cancel();
             }
             manager.closeAudioConnection();
-        } else return;
+        }
+        
+        else return;
+    
     }
 }
