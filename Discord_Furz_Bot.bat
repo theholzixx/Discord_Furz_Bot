@@ -1,1 +1,0 @@
-start javaw -jar Discord_Furz_Bot.jar
