@@ -32,6 +32,7 @@ public class DiscordBot extends ListenerAdapter{
     static AudioPlayerManager playerManager;
     static AudioPlayer player;
     static TrackScheduler schedular;
+    Boolean furzen = false;
 
     public static Collection<Timer> tasks = new ArrayList();
 
@@ -98,7 +99,7 @@ public class DiscordBot extends ListenerAdapter{
     public static void main(String[] args) throws Exception {
         String data = "Error";
         try {
-            File myObj = new File("./discord_furz_bot/src/token.txt");
+            File myObj = new File("token.txt");
             Scanner myReader = new Scanner(myObj);
             while (myReader.hasNextLine()) {
                 data = myReader.nextLine();
@@ -109,7 +110,7 @@ public class DiscordBot extends ListenerAdapter{
             e.printStackTrace();
         }
 
-        soundFolder = new File("discord_furz_bot/src/FurzSounds");
+        soundFolder = new File("FurzSounds");
 
         DiscordBot bot = new DiscordBot();
 
@@ -134,6 +135,9 @@ public class DiscordBot extends ListenerAdapter{
         if (!event.isFromGuild()) return;
 
         if (event.getMessage().getContentRaw().startsWith("!furz")) {
+
+            if (furzen) return;
+
             if (event.getAuthor().isBot()) return;
             Guild guild = event.getGuild();
             Member member = event.getMember();
@@ -144,15 +148,21 @@ public class DiscordBot extends ListenerAdapter{
 
             for (Timer timer : tasks) {
                 timer.cancel();
+                System.out.println("Timer gecanceled");
             }
 
-            if (event.getMessage().getContentRaw().contains("now")) {
+            /*if (event.getMessage().getContentRaw().contains("now")) {
                 playRandomSound();
                 System.out.println("Furz now");
             } else {
                 scheduleRandomSound();
                 System.out.println("Furz Random");
-            }
+            }*/
+
+            scheduleRandomSound();
+            System.out.println("Furz Random");
+
+            furzen = true;
 
             
         }
@@ -164,6 +174,7 @@ public class DiscordBot extends ListenerAdapter{
                 timer.cancel();
             }
             manager.closeAudioConnection();
+            furzen = false;
         }
         
         else return;

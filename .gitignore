@@ -24,4 +24,4 @@ hs_err_pid*
 
 # own shit
 .vscode/settings.json
-discord_furz_bot/src/token.txt
+token.txt
